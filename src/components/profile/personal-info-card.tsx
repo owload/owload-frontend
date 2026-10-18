@@ -29,10 +29,10 @@ interface PersonalInfoCardProps {
 }
 
 /**
- * The picture, the name and the email: shown as a list, or as a form after "Edit". The name comes from the identity
- * provider and stays empty after a plain registration; the email cannot be changed. The picture is the initials by
- * default, then a preset or the user's own upload, chosen in the "Profile picture" dialog; it is never taken from the
- * identity provider.
+ * The picture, the name and the email: shown as a list, with "Edit" on the name's row, which turns the name into a form with a
+ * "Save changes" button. The name comes from the identity provider and stays empty after a plain registration; the email cannot be
+ * changed. The picture is not part of that form: it is the initials by default, then a preset or the user's own upload, and it is
+ * saved the moment it is chosen (a preset) or confirmed in the "Profile picture" dialog; it is never taken from the identity provider.
  */
 export function PersonalInfoCard({ name, email, emailVerified, memberSince, onSaveName }: PersonalInfoCardProps) {
     const { profile, avatarUrl, status, setAvatarPreset, uploadAvatar, resetAvatar } = useUserProfile();
@@ -110,19 +110,6 @@ export function PersonalInfoCard({ name, email, emailVerified, memberSince, onSa
                     onSubmit={(e) => { e.preventDefault(); void save(); }}
                     className="m-0 flex flex-col gap-3.5"
                 >
-                    <div className="flex items-center gap-3.5">
-                        <UserAvatar className="size-16" />
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex flex-wrap gap-2">
-                                <ProfileButton tone="dark" onClick={() => setDialogOpen(true)}>
-                                    <Camera aria-hidden="true" className="size-4" strokeWidth={2.2} />Change photo
-                                </ProfileButton>
-                                <ProfileButton tone="ghost" disabled={avatar.kind === "default"} onClick={() => void removePicture()}>Remove</ProfileButton>
-                            </div>
-                            <span className="text-xs text-sunny-muted">JPG, PNG or WebP.</span>
-                        </div>
-                    </div>
-                    {pictureFailed && <FieldError>The picture could not be changed. Try again.</FieldError>}
                     <Field label="Name" htmlFor={nameId}>
                         <Input id={nameId} type="text" value={draftName} onChange={(e) => setDraftName(e.target.value)} maxLength={255} placeholder="Your name" autoComplete="name" />
                     </Field>
@@ -136,16 +123,12 @@ export function PersonalInfoCard({ name, email, emailVerified, memberSince, onSa
                         <ProfileButton tone="yellow" size={44} type="submit" disabled={saving}><Check aria-hidden="true" className="size-4" strokeWidth={2.2} />{saving ? "Saving…" : "Save changes"}</ProfileButton>
                     </div>
                 </form>
-                {dialog}
             </ProfileCard>
         );
     }
 
     return (
-        <ProfileCard
-            title="Personal info"
-            action={<ProfileButton tone="dark" onClick={startEditing}><Pencil aria-hidden="true" className="size-4" strokeWidth={2.2} />Edit</ProfileButton>}
-        >
+        <ProfileCard title="Personal info">
             <div className="flex min-w-0 items-center gap-3.5">
                 <UserAvatar className="size-16 text-2xl" />
                 <div className="flex min-w-0 flex-col gap-0.5">
@@ -183,7 +166,13 @@ export function PersonalInfoCard({ name, email, emailVerified, memberSince, onSa
             )}
 
             <div className="flex flex-col">
-                <InfoRow first label="Name">{name ?? <span className="font-normal text-sunny-muted">Not set</span>}</InfoRow>
+                <InfoRow
+                    first
+                    label="Name"
+                    action={<ProfileButton tone="dark" size={36} onClick={startEditing} aria-label="Edit name"><Pencil aria-hidden="true" className="size-4" strokeWidth={2.2} />Edit</ProfileButton>}
+                >
+                    {name ?? <span className="font-normal text-sunny-muted">Not set</span>}
+                </InfoRow>
                 <InfoRow label="Email">
                     {email ? <span className="break-all">{email}</span> : <span className="font-normal text-sunny-muted">Not provided</span>}
                     {email && emailVerified && <Badge tone="green" check>Verified</Badge>}
