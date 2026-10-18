@@ -11,10 +11,10 @@ const GREY = "#e9e8e3";
  * nothing is chosen.
  */
 export const AVATAR_PRESETS = [
-    { id: "rings", label: "Rings" },
-    { id: "arcs", label: "Arcs" },
+    { id: "orbit", label: "Orbit" },
+    { id: "corner", label: "Corner" },
     { id: "split", label: "Split" },
-    { id: "stripes", label: "Stripes" },
+    { id: "tiles", label: "Tiles" },
     { id: "dots", label: "Dots" },
     { id: "waves", label: "Waves" },
     { id: "cipher", label: "Cipher" },
@@ -27,7 +27,7 @@ export const AVATAR_PRESETS = [
 export type AvatarPresetId = (typeof AVATAR_PRESETS)[number]["id"];
 
 /** The presets offered next to the name before the full list is opened. */
-export const QUICK_PRESETS: AvatarPresetId[] = ["rings", "arcs", "split", "stripes", "dots"];
+export const QUICK_PRESETS: AvatarPresetId[] = ["orbit", "corner", "split", "tiles", "dots"];
 
 /** Up to two capital letters of a name (or of an email or a user name), for the default picture. */
 export function initialsOf(name: string): string {
@@ -36,19 +36,19 @@ export function initialsOf(name: string): string {
 }
 
 const dotPositions = [8, 20, 32, 44, 56];
-const stripeStarts = [-20, -4, 12, 28, 44, 60, 76];
 
 const ART: Record<AvatarPresetId, React.ReactNode> = {
-    rings: (
+    orbit: (
         <>
             <rect width="64" height="64" fill={YELLOW} />
-            {[7, 17, 27, 37, 47].map((r) => <circle key={r} cx="46" cy="18" r={r} fill="none" stroke={INK} strokeWidth="2.5" />)}
+            <circle cx="30" cy="34" r="16" fill={INK} />
+            <circle cx="49" cy="14" r="5" fill={INK} />
         </>
     ),
-    arcs: (
+    corner: (
         <>
             <rect width="64" height="64" fill={INK} />
-            {[14, 28, 42, 56].map((r) => <circle key={r} cx="0" cy="64" r={r} fill="none" stroke={YELLOW} strokeWidth="5" />)}
+            <circle cx="0" cy="64" r="46" fill={YELLOW} />
         </>
     ),
     split: (
@@ -59,12 +59,13 @@ const ART: Record<AvatarPresetId, React.ReactNode> = {
             <path d="M32 18a14 14 0 0 1 0 28z" fill={YELLOW} />
         </>
     ),
-    stripes: (
+    tiles: (
         <>
-            <rect width="64" height="64" fill={INK} />
-            <g transform="rotate(45 32 32)">
-                {stripeStarts.map((x) => <rect key={x} x={x} y="-20" width="7" height="104" fill={YELLOW} />)}
-            </g>
+            <rect width="64" height="64" fill={GREY} />
+            <rect x="11" y="11" width="20" height="20" rx="4" fill={INK} />
+            <rect x="33" y="11" width="20" height="20" rx="4" fill={YELLOW} />
+            <rect x="11" y="33" width="20" height="20" rx="4" fill="#c9a62b" />
+            <rect x="33" y="33" width="20" height="20" rx="4" fill={INK} />
         </>
     ),
     dots: (
