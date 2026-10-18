@@ -6,6 +6,7 @@ import { DriveInfo, DriveStorageTarget, RestDriveBackend, S3Preset } from "@/eng
 import { useEffect, useState } from "react";
 import { DebouncedSkeleton } from "@/components/ui/debounced-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSkeletonGate } from "@/hooks/use-skeleton-gate";
 import { useNavigate, useParams } from "react-router-dom";
 import { useUserInfo } from "@/auth-context-provider";
 import { useFilesStore } from "@/stores/files-store";
@@ -66,6 +67,10 @@ export function DriveSettingsPage() {
   const [allPresets, setAllPresets] = useState<S3Preset[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // The sections that depend on who the user is on this drive come all at once, after the drive is known: a skeleton if that takes long,
+  // nothing (but the room they take) if it does not. Nothing of them is drawn on a guess, such as the danger zone before the role is known.
+  const gate = useSkeletonGate(loading);
+  const pending = loading || gate === 'skeleton';
   const [busy, setBusy] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<DriveStorageTarget | null>(null);
@@ -214,23 +219,40 @@ export function DriveSettingsPage() {
     </div>
   );
 
+  const sectionsSkeleton = (
+    <div aria-hidden={gate !== 'skeleton'} className={gate === 'skeleton' ? 'flex flex-col gap-5' : 'invisible flex flex-col gap-5'}>
+      {[160, 190, 230].map(height => (
+        <section key={height} className="space-y-4 rounded-2xl border border-sunny-line bg-white p-5">
+          <Skeleton className="h-5 w-36" />
+          <Skeleton className="w-full rounded-xl" style={{ height }} />
+        </section>
+      ))}
+    </div>
+  );
+
   return (
     <div className="drives-theme absolute inset-x-0 bottom-0 top-18 overflow-y-auto bg-white px-4 pt-6 md:px-10">
       <h1 className="m-0 text-[32px] font-semibold leading-[1.2] tracking-[-0.01em] max-md:text-[28px]">Drive settings</h1>
       <main className="mt-5 flex max-w-2xl flex-col gap-5 pb-10">
 
-        {driveInfo && (
+        {pending && sectionsSkeleton}
+
+        {!pending && loadError && !driveInfo && (
+          <p className="text-sm text-[#b3261e]">Failed to load the drive: {loadError}</p>
+        )}
+
+        {!pending && driveInfo && (
           <AccessSection
             driveInfo={driveInfo}
             onLeft={() => { void updateDrives(); navigate('/'); }}
           />
         )}
 
-        {driveInfo && isOwner && (
+        {!pending && driveInfo && isOwner && (
           <StorageLimitSection key={driveInfo.storageLimitBytes ?? 'none'} driveInfo={driveInfo} onChanged={(info) => { setDriveInfo(info); void updateDrives(); }} />
         )}
 
-        {(!driveInfo || driveInfo.myRole === 'owner' || driveInfo.myRole === 'admin') && (
+        {!pending && driveInfo && (driveInfo.myRole === 'owner' || driveInfo.myRole === 'admin') && (
         <section className="space-y-4 rounded-2xl border border-sunny-line bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
           <h2 className="m-0 text-[17px] font-semibold">Storage targets</h2>
 
@@ -319,7 +341,7 @@ export function DriveSettingsPage() {
         </section>
         )}
 
-        {(!driveInfo || isOwner) && (
+        {!pending && driveInfo && isOwner && (
         <section className="space-y-3 rounded-2xl border border-[#e6b8b3] bg-[#fdf6f5] p-5">
           <h2 className="m-0 text-[17px] font-semibold text-[#b3261e]">Danger zone</h2>
           <p className="text-sm text-muted-foreground">
