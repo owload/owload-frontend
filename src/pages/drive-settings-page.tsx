@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { DebouncedSkeleton } from "@/components/ui/debounced-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSkeletonGate } from "@/hooks/use-skeleton-gate";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useUserInfo } from "@/auth-context-provider";
 import { useFilesStore } from "@/stores/files-store";
 import { useCloseDrive } from "@/hooks/use-close-drives";
@@ -57,6 +57,8 @@ function makeMasterDisabledReason(t: DriveStorageTarget): string | null {
 export function DriveSettingsPage() {
   const { driveId } = useParams<{ driveId: string }>();
   const navigate = useNavigate();
+  // set by the page that created the drive, when the visibility chosen there could not be applied
+  const accessNotice = (useLocation().state as { accessNotice?: string } | null)?.accessNotice;
   const { id: currentUserId } = useUserInfo();
   const updateDrives = useFilesStore((state) => state.updateDrives);
   const closeDrive = useCloseDrive();
@@ -234,6 +236,8 @@ export function DriveSettingsPage() {
     <div className="drives-theme absolute inset-x-0 bottom-0 top-18 overflow-y-auto bg-white px-4 pt-6 md:px-10">
       <h1 className="m-0 text-[32px] font-semibold leading-[1.2] tracking-[-0.01em] max-md:text-[28px]">Drive settings</h1>
       <main className="mt-5 flex max-w-2xl flex-col gap-5 pb-10">
+
+        {accessNotice && <p role="alert" className="m-0 rounded-xl bg-sunny-field px-3.5 py-3 text-sm font-semibold text-[#b3261e]">{accessNotice}</p>}
 
         {pending && sectionsSkeleton}
 

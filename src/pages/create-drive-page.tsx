@@ -10,11 +10,12 @@ import { RestoreDrivesDialog } from "@/components/storage/restore-drives-dialog"
 import { ArchiveRestore, ArrowLeft, Lock, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Rings, TopRow } from "@/components/drives/page-top";
-import { AccessSection } from "@/components/drives/new-drive/access-section";
+import { AccessSection, type NewDriveVisibility } from "@/components/drives/new-drive/access-section";
+import { RestAccessBackend } from "@/engine/backend/access-backend";
 import { Field, FieldError, FormSection, PasswordInput, PasswordStrengthMeter, RepeatCheck, useFieldId } from "@/components/drives/new-drive/form-parts";
 
 export function CreateDrivePage() {
-  const { initialize, setDriveDescription } = useFilesStoreOps();
+  const { initialize, setDriveDescription, refresh } = useFilesStoreOps();
   const updateDrives = useFilesStore((state) => state.updateDrives);
   const navigate = useNavigate();
 
@@ -24,6 +25,7 @@ export function CreateDrivePage() {
   const [repeatPassword, setRepeatPassword] = useState('');
   // set by the first try to create the drive: from then on the fields left empty are marked
   const [submitted, setSubmitted] = useState(false);
+  const [visibility, setVisibility] = useState<NewDriveVisibility>('private');
 
   const [allPresets, setAllPresets] = useState<S3Preset[]>([]);
   const [presetsError, setPresetsError] = useState<string | null>(null);
@@ -111,10 +113,25 @@ export function CreateDrivePage() {
         if (slaveInput) await driveBackend.addStorageTarget(driveId, slaveInput);
       }
 
+      // The visibility is set once the drive exists. If that fails the drive is there, private; the settings open and say so.
+      let accessNotice: string | undefined;
+      if (visibility !== 'private') {
+        try {
+          await new RestAccessBackend().setVisibility(driveId, visibility);
+        } catch {
+          accessNotice = `The drive was created, but it could not be made ${visibility}. Choose its visibility here.`;
+        }
+      }
+
       await updateDrives();
       await initialize(driveId, password, "/", { aborted: false });
       await setDriveDescription(description);
-      await navigate(`/drive/${driveId}`);
+      // What the drive's card shows (the description, the files) is taken from the drive when it is read; without this the card of a drive
+      // that was not opened after being created would take the missing description for a wrong password.
+      await refresh();
+      // A shared or a public drive goes on to its settings: that is where the people are added and the link is shown.
+      if (visibility === 'private') await navigate(`/drive/${driveId}`);
+      else await navigate(`/drive/${driveId}/settings`, { state: accessNotice ? { accessNotice } : undefined });
     } catch (e: any) {
       setCreateError(e?.response?.data?.detail ?? e?.message ?? 'Failed to create drive');
     } finally {
@@ -171,7 +188,7 @@ export function CreateDrivePage() {
                 </Field>
               </FormSection>
 
-              <AccessSection />
+              <AccessSection visibility={visibility} onChange={setVisibility} />
 
               <div className="flex min-w-0 flex-col gap-3">
                 <FormSection number={3} title="Storage" aside={null}>
