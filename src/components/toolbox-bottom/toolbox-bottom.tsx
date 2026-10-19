@@ -262,6 +262,9 @@ export function ToolboxBottom(props: { className?: string }) {
         );
     }
 
+    // Somebody who cannot change the drive has nothing in the dock until a file is selected (then Download and Properties): an empty bar is not drawn.
+    if (!canWrite && !isDownloadAvailable && !showUploadStateButton) return null;
+
     return (
         <div className={cn('pointer-events-none flex justify-center px-4', props.className)}>
             <div role="toolbar" aria-label="File actions" className="pointer-events-auto relative flex flex-wrap items-center justify-center gap-1 rounded-[18px] bg-sidebar p-2 text-white shadow-[0_12px_30px_rgba(42,40,34,0.30)]">

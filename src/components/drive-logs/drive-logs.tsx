@@ -394,7 +394,7 @@ export function DriveLogs() {
     : null;
 
   return (
-    <div className="absolute top-14 bottom-0 inset-x-0 overflow-y-auto p-4">
+    <div className="absolute top-[calc(3.5rem+var(--banner-h,0px))] bottom-0 inset-x-0 overflow-y-auto p-4">
       <div className="mb-3 flex gap-8 text-sm">
         <div><strong>Allocated (S3):</strong> {allocatedSize === null ? "loading…" : formatBytes(allocatedSize)}</div>
         <div><strong>Effective (files):</strong> {effectiveSize === null ? "loading…" : formatBytes(effectiveSize)}</div>

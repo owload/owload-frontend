@@ -194,14 +194,14 @@ export function MediaPage() {
     }, [viewerId, items]);
 
     if (filesInitialized && !driveStats?.description) {
-        return <div className="absolute inset-x-0 bottom-0 top-18"><WrongPasswordFilesArea /></div>;
+        return <div className="absolute inset-x-0 bottom-0 top-[calc(4.5rem+var(--banner-h,0px))]"><WrongPasswordFilesArea /></div>;
     }
 
     const loaded = ready && (snapshot.items.length > 0 || snapshot.pending === 0);
     const reading = snapshot.pending > 0 ? snapshot.total - snapshot.pending : undefined;
 
     return (
-        <div className="absolute inset-x-0 bottom-0 top-18 flex flex-col">
+        <div className="absolute inset-x-0 bottom-0 top-[calc(4.5rem+var(--banner-h,0px))] flex flex-col">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-2 pt-4 md:px-7">
                 <div className="flex min-w-0 flex-col">
                     <h1 className="m-0 flex items-center gap-2 text-[22px] font-semibold leading-tight text-sunny-ink">

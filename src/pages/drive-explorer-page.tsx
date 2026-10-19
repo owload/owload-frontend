@@ -1,12 +1,13 @@
 
 import { useFilesStore } from '@/stores/files-store';
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useFilesStoreOps } from '@/hooks/use-files-store-ops';
 import { AbortContext } from '@/types/types';
 import { DialogClosedError } from '@/types/errors';
 import { useOpenFileProperties } from '@/hooks/use-dialogs';
 import { useCanWrite } from '@/hooks/use-drive-role';
+import { Eye } from 'lucide-react';
 
 export function DriveExplorerPage() {
   const navigate = useNavigate();
@@ -105,35 +106,62 @@ export function DriveExplorerPage() {
   }, [driveKey, filesInitialized]);
 
 
+  // The notices under the top bar take room: the pages below start under them (they read `--banner-h`) instead of being covered.
+  const bannerStack = useRef<HTMLDivElement>(null);
+  const [bannerHeight, setBannerHeight] = useState(0);
+  useLayoutEffect(() => {
+    const element = bannerStack.current;
+    if (!element) return;
+    const measure = () => setBannerHeight(element.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
   const openFileProperties = useOpenFileProperties();
+  // "Got it" closes the notice for as long as the window stays on this drive; it is not remembered, so it comes back every time the drive is opened.
+  const [viewOnlyDismissed, setViewOnlyDismissed] = useState(false);
+  useEffect(() => { setViewOnlyDismissed(false); }, [driveId]);
   const canWrite = useCanWrite();
   const publicToken = useFilesStore((state) => state.publicToken);
 
   return (
-    <>
-      {fileNotFound && (
-        <div className="absolute top-18 inset-x-0 z-50 flex items-center gap-3 border-b border-[#f0d3bd] bg-[#fbeee4] px-4 py-2 text-sm font-medium text-sunny-orange">
-          <span>This file no longer exists.</span>
-          {notFoundNodeId && (
+    <div className="contents" style={{ '--banner-h': `${bannerHeight}px` } as React.CSSProperties}>
+      <div ref={bannerStack} className="absolute top-18 inset-x-0 z-40 flex flex-col">
+        {fileNotFound && (
+          <div className="flex items-center gap-3 border-b border-[#f0d3bd] bg-[#fbeee4] px-4 py-2 text-sm font-medium text-sunny-orange">
+            <span>This file no longer exists.</span>
+            {notFoundNodeId && (
+              <button
+                className="underline hover:opacity-80"
+                onClick={() => openFileProperties({ nodeId: notFoundNodeId, filePath: '', byteLength: 0 }).catch(() => {})}
+              >
+                View properties
+              </button>
+            )}
             <button
-              className="underline hover:opacity-80"
-              onClick={() => openFileProperties({ nodeId: notFoundNodeId, filePath: '', byteLength: 0 }).catch(() => {})}
-            >
-              View properties
-            </button>
-          )}
-          <button
-            className="ml-auto hover:opacity-80"
-            onClick={() => navigate(location.pathname, { replace: true, state: {} })}
-          >✕</button>
-        </div>
-      )}
-      {!canWrite && (
-        <div role="status" className="absolute top-18 inset-x-0 z-40 flex items-center gap-2 border-b border-sunny-line bg-sunny-yellow-soft px-4 py-1.5 text-[13px] font-semibold text-sunny-text-on-yellow">
-          {publicToken ? "This is a public drive: you can view and download its files." : "You can view and download files in this drive, not change them."}
-        </div>
-      )}
+              className="ml-auto hover:opacity-80"
+              onClick={() => navigate(location.pathname, { replace: true, state: {} })}
+            >✕</button>
+          </div>
+        )}
+        {!canWrite && !viewOnlyDismissed && (
+          <div className="px-4 pt-3 md:px-7">
+            <div role="status" className="flex items-center gap-3 rounded-xl bg-sunny-yellow-soft px-4 py-3 text-sm text-sunny-ink">
+              <Eye aria-hidden="true" className="size-4 flex-none" strokeWidth={2.2} />
+              <p className="m-0 min-w-0 flex-1 leading-snug">
+                <b className="font-semibold">View only.</b>{" "}
+                {publicToken ? "You can view and download the files of this public drive, but not change them." : "You can view and download files in this drive, but not change them."}
+              </p>
+              <button type="button" onClick={() => setViewOnlyDismissed(true)} className="flex-none cursor-pointer rounded-md px-2 py-1 font-semibold outline-sunny-ink hover:bg-sunny-ink/10 focus-visible:outline-2">
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
       <Outlet />
-    </>
+    </div>
   )
 }
