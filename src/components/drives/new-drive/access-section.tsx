@@ -7,13 +7,13 @@ export type NewDriveVisibility = "private" | "shared" | "public";
 const OPTIONS: { value: NewDriveVisibility, title: string, text: string, Icon: typeof Lock }[] = [
     { value: "private", title: "Private", text: "Only you can open this drive.", Icon: Lock },
     { value: "shared", title: "Shared", text: "You and the people you add.", Icon: Users },
-    { value: "public", title: "Public", text: "Anyone with the link, no sign-in needed.", Icon: Link2 },
+    { value: "public", title: "Public", text: "Anyone with the link, no sign-in needed, and the people you add.", Icon: Link2 },
 ];
 
 /** What to tell the person under the chosen visibility; none for a private drive. */
 const NEXT_STEP: Partial<Record<NewDriveVisibility, string>> = {
     shared: "You add the people in the next step: the drive's settings open after it is created. Tell them the drive's password yourself, outside Owload.",
-    public: "The link is made when the drive is created, and the drive's settings open to show it. The link only lets people view the encrypted drive; they still need its password to read anything.",
+    public: "The link is made when the drive is created, and the drive's settings open to show it and to add people with roles, if you want some. The link only lets people view the encrypted drive; they still need its password to read anything.",
 };
 
 /**

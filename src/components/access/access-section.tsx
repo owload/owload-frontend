@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 const OPTIONS: { value: DriveVisibility, title: string, text: string, Icon: typeof Lock }[] = [
     { value: "private", title: "Private", text: "Only you can open this drive.", Icon: Lock },
     { value: "shared", title: "Shared", text: "You and the people you add.", Icon: Users },
-    { value: "public", title: "Public", text: "Anyone with the link, no sign-in needed.", Icon: Link2 },
+    { value: "public", title: "Public", text: "Anyone with the link, no sign-in needed, and the people you add.", Icon: Link2 },
 ];
 
 const ROLE_LABEL: Record<DriveRole, string> = { admin: "Admin", writer: "Writer", reader: "Reader" };
@@ -91,7 +91,7 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
     const [copied, setCopied] = useState<"link" | "app" | undefined>();
     // the role each pending request is going to be given (reader unless the owner picks another)
     const [requestRoles, setRequestRoles] = useState<Record<string, DriveRole>>({});
-    // Leaving "shared" takes everyone off the drive, so it is asked first when there is anyone.
+    // Making the drive private takes everyone off it, so it is asked first when there is anyone (and always of an admin, who loses it too).
     const [leaving, setLeaving] = useState<DriveVisibility | undefined>();
 
     const myRole = access?.myRole ?? driveInfo.myRole;
@@ -154,7 +154,7 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
                         <label key={value} className={cn("flex min-h-[52px] cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-[7px]", selected ? "border-sunny-ink bg-sunny-yellow-soft" : "border-sunny-line bg-white hover:border-sunny-ink")}>
                             <input type="radio" name="visibility" value={value} checked={selected} onChange={() => {
                                 // an admin who makes the drive private or public loses it too (only the owner stays), so they are asked even with nobody else on it
-                                if (access.visibility === "shared" && value !== "shared" && (access.people.length > 0 || !isOwner)) setLeaving(value);
+                                if (value === "private" && access.visibility !== "private" && (access.people.length > 0 || !isOwner)) setLeaving(value);
                                 else void run(() => setVisibility(value));
                             }} className="m-0 size-[18px] flex-none accent-sunny-ink" />
                             <span className="flex min-w-0 flex-1 flex-col">
@@ -168,7 +168,7 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
             </fieldset>
 
             {access.visibility === "private" && (
-                <p className="m-0 text-xs leading-normal text-muted-foreground">To let other people in, make the drive shared.</p>
+                <p className="m-0 text-xs leading-normal text-muted-foreground">To let other people in, make the drive shared or public.</p>
             )}
 
             {approved && (
@@ -186,9 +186,9 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
             {requests.length > 0 && (
                 <div className="flex flex-col gap-2.5 rounded-xl border border-sunny-ink bg-sunny-yellow-soft p-3.5">
                     <h3 className="m-0 text-[13px] font-semibold">Requests for access <span className="font-normal text-sunny-muted">({requests.length})</span></h3>
-                    {access.visibility !== "shared" && (
+                    {access.visibility === "private" && (
                         <p className="m-0 text-xs leading-normal text-sunny-text-on-yellow">
-                            People can only be let into a shared drive. Make this drive shared to approve a request; you can decline one at any time.
+                            People can only be let into a shared or a public drive. Make this drive shared to approve a request; you can decline one at any time.
                         </p>
                     )}
                     <ul className="m-0 flex list-none flex-col gap-3 p-0">
@@ -216,7 +216,7 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
                                             <option value="writer">Writer</option>
                                             <option value="reader">Reader</option>
                                         </select>
-                                        <Button size="sm" disabled={busy || access.visibility !== "shared"} onClick={() => void run(async () => setApproved(await approveRequest(request.userId, chosen)))}>Approve</Button>
+                                        <Button size="sm" disabled={busy || access.visibility === "private"} onClick={() => void run(async () => setApproved(await approveRequest(request.userId, chosen)))}>Approve</Button>
                                         <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(() => declineRequest(request.userId))}>Decline</Button>
                                     </div>
                                 </li>
@@ -239,12 +239,15 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
                         </Button>
                     </div>
                     <p className="m-0 text-xs leading-normal text-muted-foreground">
-                        The link opens the drive for reading without signing in. What is in it stays encrypted: the password is not in the link, so give it separately to the people you trust.
+                        Anyone who has the link and the drive’s password can read the drive, without signing in. What is in it stays encrypted: the password is not in the link, so give it separately to the people you trust.
+                    </p>
+                    <p className="m-0 text-xs leading-normal text-muted-foreground">
+                        You can still invite people with roles below: a reader, a writer or an admin signs in and gets that role, which can do more than the link (writers change files, admins manage the drive).
                     </p>
                 </div>
             )}
 
-            {access.visibility === "shared" && (
+            {access.visibility !== "private" && (
             <div className="flex flex-col gap-2.5">
                 <h3 className="m-0 text-[13px] font-semibold">People with access</h3>
                 <form
