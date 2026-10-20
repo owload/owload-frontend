@@ -8,6 +8,7 @@ import { DialogClosedError } from '@/types/errors';
 import { useOpenFileProperties } from '@/hooks/use-dialogs';
 import { useCanWrite } from '@/hooks/use-drive-role';
 import { Eye } from 'lucide-react';
+import { DriveNotFound } from '@/components/drives/drive-not-found';
 
 export function DriveExplorerPage() {
   const navigate = useNavigate();
@@ -24,6 +25,8 @@ export function DriveExplorerPage() {
   const drivesInitialized = useFilesStore((state) => state.drivesInitialized);
 
   const { driveId, dirId } = useParams();
+  // an address of a drive that is not in the list (it never existed, was deleted, or is not shared with the user): nothing to open
+  const driveKnown = useFilesStore((state) => state.drives.some((d) => d.id === driveId));
   const driveKey = useFilesStore((state) => driveId ? state.driveKeys[driveId] : undefined);
 
 
@@ -33,7 +36,7 @@ export function DriveExplorerPage() {
   const clearFiles = useFilesStore((state) => state.clearFiles);
 
   useEffect(() => {
-    if (!drivesInitialized) {
+    if (!drivesInitialized || !driveKnown) {
       return;
     }
     setFilesInitialized(false);
@@ -73,7 +76,7 @@ export function DriveExplorerPage() {
         setFilesInitialized(false);
       }
     }
-  }, [passwordRetryFlag, driveId, drivesInitialized]);
+  }, [passwordRetryFlag, driveId, drivesInitialized, driveKnown]);
 
   useEffect(() => {
     if (!filesInitialized) {
@@ -125,6 +128,8 @@ export function DriveExplorerPage() {
   useEffect(() => { setViewOnlyDismissed(false); }, [driveId]);
   const canWrite = useCanWrite();
   const publicToken = useFilesStore((state) => state.publicToken);
+
+  if (drivesInitialized && !driveKnown) return <DriveNotFound />;
 
   return (
     <div className="contents" style={{ '--banner-h': `${bannerHeight}px` } as React.CSSProperties}>
