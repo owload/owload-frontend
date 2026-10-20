@@ -13,6 +13,7 @@ import { DriveExplorerArea } from './components/files-area/drive-explore-area';
 import { DriveLogs } from './components/drive-logs/drive-logs';
 import { MediaPage } from './pages/media-page';
 import { DriveSettingsPage } from './pages/drive-settings-page';
+import { DriveGuard } from './components/drives/drive-guard';
 import { ProfilePage } from './pages/profile-page';
 import { ActivityPage } from './pages/activity-page';
 
@@ -57,7 +58,7 @@ function App() {
               <Route path="/drive/:driveId/logs" element={<DriveLogs />}></Route>
               <Route path="/drive/:driveId/media" element={<MediaPage />}></Route>
             </Route>
-            <Route path="/drive/:driveId/settings" element={<DriveSettingsPage />}></Route>
+            <Route path="/drive/:driveId/settings" element={<DriveGuard><DriveSettingsPage /></DriveGuard>}></Route>
           </Route>
           <Route path="/profile" element={<Layout />}>
             <Route index element={<ProfilePage />} />

@@ -8,7 +8,7 @@ import { DialogClosedError } from '@/types/errors';
 import { useOpenFileProperties } from '@/hooks/use-dialogs';
 import { useCanWrite } from '@/hooks/use-drive-role';
 import { Eye } from 'lucide-react';
-import { DriveNotFound } from '@/components/drives/drive-not-found';
+import { DriveAccessGate } from '@/components/drives/drive-access-gate';
 
 export function DriveExplorerPage() {
   const navigate = useNavigate();
@@ -129,7 +129,7 @@ export function DriveExplorerPage() {
   const canWrite = useCanWrite();
   const publicToken = useFilesStore((state) => state.publicToken);
 
-  if (drivesInitialized && !driveKnown) return <DriveNotFound />;
+  if (drivesInitialized && !driveKnown) return <DriveAccessGate driveId={driveId} />;
 
   return (
     <div className="contents" style={{ '--banner-h': `${bannerHeight}px` } as React.CSSProperties}>

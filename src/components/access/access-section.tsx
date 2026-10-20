@@ -79,14 +79,18 @@ function PersonRow({ person, canChange, canRemoveAdmin, busy, onRole, onRemove }
  * sign-in). The drive's password is not part of this: the people are told it by the owner, and a public link does not carry it.
  */
 export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onLeft: () => void }) {
-    const { access, failed, setVisibility, resetLink, addPerson, changeRole, removePerson, leave } = useDriveAccess(driveInfo.id);
+    const { access, failed, requests, setVisibility, resetLink, addPerson, changeRole, removePerson, leave, approveRequest, declineRequest } = useDriveAccess(driveInfo.id);
     const gate = useSkeletonGate(!access && !failed);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | undefined>();
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<DriveRole>("reader");
     const [added, setAdded] = useState<AddPersonResult | undefined>();
+    // the answer to the last request that was approved: whether the person was mailed
+    const [approved, setApproved] = useState<AddPersonResult | undefined>();
     const [copied, setCopied] = useState<"link" | "app" | undefined>();
+    // the role each pending request is going to be given (reader unless the owner picks another)
+    const [requestRoles, setRequestRoles] = useState<Record<string, DriveRole>>({});
     // Leaving "shared" takes everyone off the drive, so it is asked first when there is anyone.
     const [leaving, setLeaving] = useState<DriveVisibility | undefined>();
 
@@ -149,7 +153,8 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
                     return (
                         <label key={value} className={cn("flex min-h-[52px] cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-[7px]", selected ? "border-sunny-ink bg-sunny-yellow-soft" : "border-sunny-line bg-white hover:border-sunny-ink")}>
                             <input type="radio" name="visibility" value={value} checked={selected} onChange={() => {
-                                if (access.visibility === "shared" && value !== "shared" && access.people.length > 0) setLeaving(value);
+                                // an admin who makes the drive private or public loses it too (only the owner stays), so they are asked even with nobody else on it
+                                if (access.visibility === "shared" && value !== "shared" && (access.people.length > 0 || !isOwner)) setLeaving(value);
                                 else void run(() => setVisibility(value));
                             }} className="m-0 size-[18px] flex-none accent-sunny-ink" />
                             <span className="flex min-w-0 flex-1 flex-col">
@@ -164,6 +169,61 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
 
             {access.visibility === "private" && (
                 <p className="m-0 text-xs leading-normal text-muted-foreground">To let other people in, make the drive shared.</p>
+            )}
+
+            {approved && (
+                <p role="status" className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-normal">
+                    <Check aria-hidden="true" className="size-3.5 flex-none text-sunny-green" strokeWidth={2.6} />
+                    <span>
+                        Approved {approved.person.email}. {approved.emailSent ? "They were told by email." : "No email went out: send them the address of the app."}
+                    </span>
+                    {!approved.emailSent && (
+                        <button type="button" onClick={() => void copy(approved.appUrl, "app")} className="cursor-pointer font-semibold underline underline-offset-2">{copied === "app" ? "Copied" : "Copy the address"}</button>
+                    )}
+                </p>
+            )}
+
+            {requests.length > 0 && (
+                <div className="flex flex-col gap-2.5 rounded-xl border border-sunny-ink bg-sunny-yellow-soft p-3.5">
+                    <h3 className="m-0 text-[13px] font-semibold">Requests for access <span className="font-normal text-sunny-muted">({requests.length})</span></h3>
+                    {access.visibility !== "shared" && (
+                        <p className="m-0 text-xs leading-normal text-sunny-text-on-yellow">
+                            People can only be let into a shared drive. Make this drive shared to approve a request; you can decline one at any time.
+                        </p>
+                    )}
+                    <ul className="m-0 flex list-none flex-col gap-3 p-0">
+                        {requests.map((request) => {
+                            const chosen = requestRoles[request.userId] ?? "reader";
+                            return (
+                                <li key={request.userId} className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2.5">
+                                        <AvatarView initials={initialsOf(request.name || request.email)} className="size-8 text-xs" />
+                                        <span className="flex min-w-0 flex-1 flex-col">
+                                            <span className="truncate text-[13px] font-semibold">{request.name || request.email}</span>
+                                            {request.name && <span className="truncate text-xs text-muted-foreground">{request.email}</span>}
+                                        </span>
+                                    </div>
+                                    {request.message && <p className="m-0 ml-[42px] whitespace-pre-wrap break-words border-l-2 border-sunny-yellow pl-2.5 text-[13px] leading-normal">{request.message}</p>}
+                                    <div className="ml-[42px] flex flex-wrap items-center gap-2">
+                                        <select
+                                            aria-label={`Role for ${request.email}`}
+                                            value={chosen}
+                                            disabled={busy}
+                                            onChange={(e) => setRequestRoles((current) => ({ ...current, [request.userId]: e.target.value as DriveRole }))}
+                                            className="h-9 flex-none rounded-lg border border-input bg-white pl-2.5 pr-1.5 text-[13px] font-semibold"
+                                        >
+                                            {isOwner && <option value="admin">Admin</option>}
+                                            <option value="writer">Writer</option>
+                                            <option value="reader">Reader</option>
+                                        </select>
+                                        <Button size="sm" disabled={busy || access.visibility !== "shared"} onClick={() => void run(async () => setApproved(await approveRequest(request.userId, chosen)))}>Approve</Button>
+                                        <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(() => declineRequest(request.userId))}>Decline</Button>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
             )}
 
             {access.visibility === "public" && access.publicLink && (
@@ -246,9 +306,20 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Make the drive {leaving}?</DialogTitle>
-                        <DialogDescription>
-                            {access.people.length === 1 ? "The person" : `All ${access.people.length} people`} with access {access.people.length === 1 ? "is" : "are"} taken off the drive, and invitations that are not answered yet are cancelled.
-                            If you share the drive again, they have to be added again.
+                        <DialogDescription asChild>
+                            <div className="space-y-2">
+                                {access.people.length > 0 && (
+                                    <p className="m-0">
+                                        {access.people.length === 1 ? "The person" : `All ${access.people.length} people`} with access {access.people.length === 1 ? "is" : "are"} taken off the drive, and invitations that are not answered yet are cancelled.
+                                        If you share the drive again, they have to be added again.
+                                    </p>
+                                )}
+                                {!isOwner && (
+                                    <p className="m-0 font-semibold text-sunny-ink">
+                                        You are not the owner, so you lose access to this drive too: only the owner keeps a {leaving} drive. You will be taken to My drives.
+                                    </p>
+                                )}
+                            </div>
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2">
@@ -258,10 +329,11 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
                             onClick={() => {
                                 const next = leaving!;
                                 setLeaving(undefined);
-                                void run(() => setVisibility(next));
+                                // an admin who has taken the drive from themselves has nothing here any more: on to My drives
+                                void run(async () => { await setVisibility(next); if (!isOwner) onLeft(); });
                             }}
                         >
-                            Make {leaving}
+                            {isOwner ? `Make ${leaving}` : `Make ${leaving} and leave`}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
