@@ -40,7 +40,32 @@ export interface DriveInfo {
   storedBytes: number | null;
   /** The most the drive may store, set by its owner; null: none of its own (the owner's storage is the limit). */
   storageLimitBytes: number | null;
+  /** Who is on the drive, for its card: at most five by name (the person who asks is "You" and comes first), how many people that is in all, the
+   *  roles of the others as counts, the link of a public drive, and who read it last. The roles and the link are only for the owner and the admins. */
+  accessPeople: DriveAccessPerson[];
+  accessTotal: number;
+  accessRoles: Partial<Record<DriveRole | "owner", number>>;
+  publicLink: string | null;
+  recentReads: DriveRecentRead[];
 };
+
+export interface DriveAccessPerson {
+  id: UserId;
+  name: string;
+  isMe: boolean;
+  role: MyDriveRole;
+}
+
+/** The last time somebody read the drive, in milliseconds. */
+export interface DriveRecentRead {
+  userId: UserId;
+  /** "You" for the person who asks. */
+  name: string;
+  at: number;
+  role: MyDriveRole;
+  /** "opened": the drive was opened; "read": the data of its files was read. */
+  kind: "opened" | "read";
+}
 
 export type S3PresetTier = 'hot' | 'cold';
 

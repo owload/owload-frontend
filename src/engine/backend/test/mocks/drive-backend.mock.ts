@@ -49,6 +49,11 @@ export class MockDriveBackend implements DriveBackend {
             lastReadAt: null,
             storedBytes: 0,
             storageLimitBytes: null,
+            accessPeople: [],
+            accessTotal: 1,
+            accessRoles: {},
+            publicLink: null,
+            recentReads: [],
             createdTimestamp: Date.now(),
             keyNonce,
             counterNonce

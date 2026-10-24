@@ -46,6 +46,11 @@ function asDriveInfo(info: PublicDriveInfo): DriveInfo {
         lastReadAt: info.lastReadAt ?? null,
         storedBytes: null,
         storageLimitBytes: null,
+        accessPeople: [],
+        accessTotal: 1,
+        accessRoles: {},
+        publicLink: null,
+        recentReads: [],
     };
 }
 
