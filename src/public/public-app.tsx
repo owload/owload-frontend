@@ -23,6 +23,11 @@ function rememberedDrive(): { token: string, driveId: string } | undefined {
     }
 }
 
+/** The tab leaves the public drive for the main app (or the link turned out not to work any more): a reload of a page of the drive is then the main app's. */
+function forgetRememberedDrive() {
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* storage may be blocked */ }
+}
+
 /** The token in a link `/p/<token>`, or that of the public drive this tab already has open (when the page of its drive is reloaded). */
 export function publicTokenOfThisPage(): string | undefined {
     const fromLink = /^\/p\/([A-Za-z0-9_-]+)/.exec(window.location.pathname)?.[1];
@@ -74,12 +79,12 @@ function PublicLayout({ linkedNodeId }: { linkedNodeId?: string }) {
                     </div>
                     {/* a page load, not a route (the router of this app sends every other address back to the drive) */}
                     {signedIn ? (
-                        <a href="/" className="flex h-11 flex-none items-center rounded-[10px] border border-sunny-ink px-4 text-sm font-semibold hover:bg-secondary">My drives</a>
+                        <a href="/" onClick={forgetRememberedDrive} className="flex h-11 flex-none items-center rounded-[10px] border border-sunny-ink px-4 text-sm font-semibold hover:bg-secondary">My drives</a>
                     ) : (
                         // the main app goes on to the sign-in page, and after it comes back to the link this page was opened with
                         <a
                             href="/?signin=1"
-                            onClick={() => { if (token) returnAfterSignIn(`/p/${token}${linkedNodeId ? `#${encodeURIComponent(linkedNodeId)}` : ""}`); }}
+                            onClick={() => { forgetRememberedDrive(); if (token) returnAfterSignIn(`/p/${token}${linkedNodeId ? `#${encodeURIComponent(linkedNodeId)}` : ""}`); }}
                             className="flex h-11 flex-none items-center rounded-[10px] border border-sunny-ink px-4 text-sm font-semibold hover:bg-secondary"
                         >Sign in</a>
                     )}
@@ -154,7 +159,15 @@ export function PublicApp({ token }: { token: string }) {
                 setState("ready");
             })
             .catch((error) => {
-                if (!cancelled) setState((error as { response?: { status?: number } })?.response?.status === 404 ? "missing" : "failed");
+                if (cancelled) return;
+                const missing = (error as { response?: { status?: number } })?.response?.status === 404;
+                if (missing && !window.location.pathname.startsWith("/p/")) {
+                    // a reload of the drive's own page, whose remembered link has been replaced or turned off: not a public page any more
+                    forgetRememberedDrive();
+                    window.location.reload();
+                    return;
+                }
+                setState(missing ? "missing" : "failed");
             });
         return () => { cancelled = true; metas.forEach((meta) => meta.remove()); };
     }, [token]);

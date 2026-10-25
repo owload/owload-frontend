@@ -93,6 +93,8 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
     const [requestRoles, setRequestRoles] = useState<Record<string, DriveRole>>({});
     // Making the drive private takes everyone off it, so it is asked first when there is anyone (and always of an admin, who loses it too).
     const [leaving, setLeaving] = useState<DriveVisibility | undefined>();
+    // Making a new link ends the old one for everybody who has it, so it is asked first.
+    const [replacingLink, setReplacingLink] = useState(false);
 
     const myRole = access?.myRole ?? driveInfo.myRole;
     const manages = myRole === "owner" || myRole === "admin";
@@ -234,7 +236,7 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
                         <Button size="sm" variant="outline" onClick={() => void copy(access.publicLink!, "link")}>
                             {copied === "link" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}{copied === "link" ? "Copied" : "Copy"}
                         </Button>
-                        <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(resetLink)} title="The old link stops working">
+                        <Button size="sm" variant="outline" disabled={busy} onClick={() => setReplacingLink(true)} title="The old link stops working">
                             <RefreshCw aria-hidden="true" />New link
                         </Button>
                     </div>
@@ -304,6 +306,28 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
             </div>
             )}
             {error && <p role="alert" className="m-0 text-sm font-semibold text-[#b3261e]">{error}</p>}
+
+            <Dialog open={replacingLink} onOpenChange={setReplacingLink}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Make a new link?</DialogTitle>
+                        <DialogDescription asChild>
+                            <div className="space-y-2">
+                                <p className="m-0 font-semibold text-sunny-ink">The current link stops working at once, for everyone who has it.</p>
+                                <p className="m-0">
+                                    This includes links to single files and folders of the drive: they open with the old link, so they stop working too, and anyone who opens one sees that the link does not work.
+                                    You have to send the new link to the people who need it.
+                                </p>
+                                <p className="m-0">The people you invited keep their access, and the drive's password does not change.</p>
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setReplacingLink(false)}>Cancel</Button>
+                        <Button disabled={busy} onClick={() => { setReplacingLink(false); void run(resetLink); }}>Make a new link</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={leaving !== undefined} onOpenChange={(open) => { if (!open) setLeaving(undefined); }}>
                 <DialogContent>
