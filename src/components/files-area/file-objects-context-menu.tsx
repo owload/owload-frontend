@@ -12,7 +12,8 @@ import { useFilesStore } from "@/stores/files-store";
 import { FsObjectType } from "@/engine";
 import { isTauri } from "@/lib/utils";
 import { useCanWrite } from "@/hooks/use-drive-role";
-import { ExternalLink, Files, FolderOpen, Info, SquarePen, SquareScissors, Trash, CloudDownload } from "lucide-react";
+import { useShowFileLink } from "@/hooks/use-file-link";
+import { ExternalLink, Files, FolderOpen, Info, Link, SquarePen, SquareScissors, Trash, CloudDownload } from "lucide-react";
 
 
 
@@ -28,6 +29,12 @@ export function FileObjectsContextMenu({ children, fileObject }: PropsWithChildr
     const selectIds = useFilesStore((state) => state.selectIds);
     // A new tab does not have the visitor's link of a public drive (it is kept in the tab's own session storage), so it is not offered there.
     const canOpenInNewTab = useFilesStore((state) => state.publicToken) === undefined;
+
+    // a link to one file or folder of a public drive
+    const showFileLink = useShowFileLink();
+    const copySelectedLink = showFileLink && selectedFileObjects.length === 1
+        ? () => showFileLink({ id: selectedFileObjects[0].id, name: selectedFileObjects[0].name, isDir: selectedFileObjects[0].type === FsObjectType.DIR })
+        : undefined;
 
     function handleCopyClick(e: React.PointerEvent<HTMLDivElement>) {
         e.stopPropagation();
@@ -92,6 +99,7 @@ export function FileObjectsContextMenu({ children, fileObject }: PropsWithChildr
                     onOpen={openSelectedObject}
                     onOpenInNewTab={canOpenInNewTab ? openSelectedObjectInNewTab : undefined}
                     onDownload={downloadSelectedObject}
+                    onCopyLink={copySelectedLink}
                     canWrite={canWrite}
                     onRename={() => openRenameDialog({ pathSrc: pwd()!, originalName: selectedFileObjects[0].name })}
                     onCopy={() => selectFilesToCopy(pwd()!, selectedFileObjects.map((f) => f.name))}
@@ -123,6 +131,9 @@ export function FileObjectsContextMenu({ children, fileObject }: PropsWithChildr
                 {isSelectedObjectDownloadAvailable() && <ContextMenuItem onClick={handleDownloadClick}>
                     <CloudDownload />Download
                     <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+                </ContextMenuItem>}
+                {copySelectedLink && <ContextMenuItem onClick={copySelectedLink}>
+                    <Link />Get link
                 </ContextMenuItem>}
                 {canWrite && selectedFileObjects.length === 1 && <ContextMenuItem onClick={handleRenameClick}>
                     <SquarePen />Rename

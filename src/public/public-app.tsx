@@ -7,6 +7,7 @@ import { DriveExplorerArea } from "@/components/files-area/drive-explore-area";
 import { DriveExplorerPage } from "@/pages/drive-explorer-page";
 import { getPublicDriveInfo, type PublicDriveInfo } from "@/engine/backend/access-backend";
 import type { DriveInfo } from "@/engine";
+import { nodeIdOfLinkHash } from "@/lib/file-link";
 import { useFilesStore } from "@/stores/files-store";
 
 const STORAGE_KEY = "owload_public_drive";
@@ -88,13 +89,14 @@ function Message({ title, text }: { title: string, text: string }) {
     );
 }
 
-function Routing({ driveId }: { driveId: string }) {
+function Routing({ driveId, linkedNodeId }: { driveId: string, linkedNodeId?: string }) {
     const location = useLocation();
     const navigate = useNavigate();
-    // The link `/p/<token>` goes on to the drive itself, whose password the page then asks for.
+    // The link `/p/<token>` goes on to the drive itself, whose password the page then asks for; a link to a file or folder
+    // (`/p/<token>#<id>`) goes on to it, and it opens once the drive does.
     useEffect(() => {
-        if (location.pathname.startsWith("/p/")) navigate(`/drive/${driveId}`, { replace: true });
-    }, [driveId, location.pathname, navigate]);
+        if (location.pathname.startsWith("/p/")) navigate(linkedNodeId ? `/drive/${driveId}/${encodeURIComponent(linkedNodeId)}` : `/drive/${driveId}`, { replace: true });
+    }, [driveId, linkedNodeId, location.pathname, navigate]);
     return (
         <Routes>
             <Route element={<PublicLayout />}>
@@ -115,6 +117,8 @@ function Routing({ driveId }: { driveId: string }) {
 export function PublicApp({ token }: { token: string }) {
     const [state, setState] = useState<"loading" | "ready" | "missing" | "failed">("loading");
     const [driveId, setDriveId] = useState("");
+    // read once, before the router replaces the address: the part after `#` is the file or folder the link is for
+    const [linkedNodeId] = useState(() => (window.location.pathname.startsWith("/p/") ? nodeIdOfLinkHash(window.location.hash) : undefined));
 
     useEffect(() => {
         // The link is a secret: do not pass it on in the Referer of a link followed from here, and keep search engines out.
@@ -145,5 +149,5 @@ export function PublicApp({ token }: { token: string }) {
     if (state === "loading") return null;
     if (state === "missing") return <Message title="This link does not work" text="The drive may have been made private, or its link replaced. Ask the person who shared it for a new link." />;
     if (state === "failed") return <Message title="The drive could not be opened" text="Something went wrong on the way. Try again in a moment." />;
-    return <BrowserRouter><Routing driveId={driveId} /></BrowserRouter>;
+    return <BrowserRouter><Routing driveId={driveId} linkedNodeId={linkedNodeId} /></BrowserRouter>;
 }

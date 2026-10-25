@@ -8,6 +8,7 @@ import { DialogClosedError } from '@/types/errors';
 import { useOpenFileProperties } from '@/hooks/use-dialogs';
 import { useCanWrite } from '@/hooks/use-drive-role';
 import { Eye } from 'lucide-react';
+import { FileLinkDialog } from '@/components/files-area/file-link-dialog';
 import { DriveAccessGate } from '@/components/drives/drive-access-gate';
 
 export function DriveExplorerPage() {
@@ -137,7 +138,7 @@ export function DriveExplorerPage() {
         {fileNotFound && (
           <div className="flex items-center gap-3 border-b border-[#f0d3bd] bg-[#fbeee4] px-4 py-2 text-sm font-medium text-sunny-orange">
             <span>This file no longer exists.</span>
-            {notFoundNodeId && (
+            {notFoundNodeId && !publicToken && (
               <button
                 className="underline hover:opacity-80"
                 onClick={() => openFileProperties({ nodeId: notFoundNodeId, filePath: '', byteLength: 0 }).catch(() => {})}
@@ -167,6 +168,7 @@ export function DriveExplorerPage() {
         )}
       </div>
       <Outlet />
+      <FileLinkDialog />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { ExternalLink, Files, FolderOpen, Info, SquarePen, SquareScissors, Trash, CloudDownload } from "lucide-react";
+import { ExternalLink, Files, FolderOpen, Info, Link, SquarePen, SquareScissors, Trash, CloudDownload } from "lucide-react";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "../ui/drawer";
 import { FsObjectType } from "@/engine";
 import { FileProperties } from "@/types/types";
@@ -19,6 +19,8 @@ export type FileActionsSheetProps = {
     /** Not given where a new tab cannot be opened (the anonymous viewer of a public link). */
     onOpenInNewTab?: () => void;
     onDownload: () => void;
+    /** Given for one item of a public drive whose link is known. */
+    onCopyLink?: () => void;
     onRename: () => void;
     onCopy: () => void;
     onCut: () => void;
@@ -63,7 +65,8 @@ export function FileActionsSheet(props: FileActionsSheetProps) {
                     {props.canOpen && single && props.onOpenInNewTab && <Item icon={<ExternalLink />} onClick={run(props.onOpenInNewTab)}>{isTauri() ? "Open in new window" : "Open in new tab"}</Item>}
                     {props.canOpen && <Item icon={<FolderOpen />} onClick={run(props.onOpen)}>Open</Item>}
                     {props.canDownload && <Item icon={<CloudDownload />} onClick={run(props.onDownload)}>Download</Item>}
-                    {(props.canOpen || props.canDownload) && <Separator />}
+                    {single && props.onCopyLink && <Item icon={<Link />} onClick={run(props.onCopyLink)}>Get link</Item>}
+                    {(props.canOpen || props.canDownload || (single && props.onCopyLink)) && <Separator />}
                     {props.canWrite !== false && <>
                         {single && <Item icon={<SquarePen />} onClick={run(props.onRename)}>Rename</Item>}
                         <Item icon={<Files />} onClick={run(props.onCopy)}>Copy</Item>
