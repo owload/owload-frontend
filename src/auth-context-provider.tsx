@@ -207,6 +207,7 @@ function TauriAuthProvider({ authenticatedChild, anonymousChild }: ProviderProps
     accessTokenRef.current = "";
     refreshTokenRef.current = "";
     localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+    window.history.replaceState(null, "", "/"); // the main page, not the drive the person was on
     setUserInfo(emptyUserInfo);
     setAuthStatus("ANONYMOUS");
   }
@@ -298,7 +299,8 @@ function WebAuthProvider({ authenticatedChild, anonymousChild }: ProviderProps) 
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  function logout() { clearKcTokens(); keycloak.logout(); }
+  // Signing out brings the person to the main page of the app, not back to the drive they were on.
+  function logout() { clearKcTokens(); void keycloak.logout({ redirectUri: `${window.location.origin}/` }); }
   function register() { keycloak.register(); }
 
   return (
