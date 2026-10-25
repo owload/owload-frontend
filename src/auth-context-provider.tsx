@@ -233,6 +233,28 @@ const keycloak = new Keycloak({
 
 const KC_TOKEN_KEY = "owload_kc_token";
 const KC_REFRESH_TOKEN_KEY = "owload_kc_refresh_token";
+const AFTER_SIGN_IN_KEY = "owload_after_signin";
+const RETURNABLE = /^\/p\/[A-Za-z0-9_-]+(#.*)?$/;
+
+/** Where the page goes once the person has signed in: back to the link of a public drive they came from (only such a link; nothing else is taken). */
+export function returnAfterSignIn(link: string) {
+  try { if (RETURNABLE.test(link)) sessionStorage.setItem(AFTER_SIGN_IN_KEY, link); } catch { /* storage may be blocked */ }
+}
+
+function takeReturnAfterSignIn(): string | undefined {
+  try {
+    const link = sessionStorage.getItem(AFTER_SIGN_IN_KEY);
+    sessionStorage.removeItem(AFTER_SIGN_IN_KEY);
+    return link && RETURNABLE.test(link) ? link : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Whether this browser has a sign-in of the web app (its tokens are kept; they may have run out, the app then asks again). */
+export function hasSignedInHere(): boolean {
+  try { return localStorage.getItem(KC_TOKEN_KEY) !== null; } catch { return false; }
+}
 
 function saveKcTokens() {
   if (keycloak.token) localStorage.setItem(KC_TOKEN_KEY, keycloak.token);
@@ -259,6 +281,11 @@ function WebAuthProvider({ authenticatedChild, anonymousChild }: ProviderProps) 
       .then(async (authenticated) => {
         if (authenticated) {
           saveKcTokens();
+          const back = takeReturnAfterSignIn();
+          if (back) {
+            window.location.replace(back); // signed in from the page of a public drive: back to its link
+            return;
+          }
           setAxiosInterceptor(
             () => keycloak.token ?? "",
             async () => {
@@ -278,6 +305,12 @@ function WebAuthProvider({ authenticatedChild, anonymousChild }: ProviderProps) 
           setAuthStatus("AUTHENTICATED");
         } else {
           clearKcTokens();
+          // "Sign in" on the page of a public drive comes here with `?signin=1`: on to the sign-in page at once, not the landing page.
+          if (new URLSearchParams(window.location.search).get("signin") === "1") {
+            window.history.replaceState(null, "", "/");
+            void keycloak.login({ redirectUri: `${window.location.origin}/` });
+            return;
+          }
           setAuthStatus("ANONYMOUS");
         }
       })

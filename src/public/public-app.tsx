@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { createJSONStorage } from "zustand/middleware";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { FsOpsDialog } from "@/components/fs-dialogs/fs-ops-dialog";
@@ -7,6 +7,7 @@ import { DriveExplorerArea } from "@/components/files-area/drive-explore-area";
 import { DriveExplorerPage } from "@/pages/drive-explorer-page";
 import { getPublicDriveInfo, type PublicDriveInfo } from "@/engine/backend/access-backend";
 import type { DriveInfo } from "@/engine";
+import { hasSignedInHere, returnAfterSignIn } from "@/auth-context-provider";
 import { nodeIdOfLinkHash } from "@/lib/file-link";
 import { useFilesStore } from "@/stores/files-store";
 
@@ -55,7 +56,9 @@ function asDriveInfo(info: PublicDriveInfo): DriveInfo {
     };
 }
 
-function PublicLayout() {
+function PublicLayout({ linkedNodeId }: { linkedNodeId?: string }) {
+    const token = useFilesStore((state) => state.publicToken);
+    const signedIn = hasSignedInHere();
     const title = useFilesStore((state) => state.drives[0]?.title);
     const owner = useFilesStore((state) => state.drives[0]?.ownerName);
     return (
@@ -69,7 +72,17 @@ function PublicLayout() {
                         <span className="truncate text-[15px] font-semibold">{title}</span>
                         <span className="truncate text-xs text-muted-foreground">Public drive{owner ? ` of ${owner}` : ""}</span>
                     </div>
-                    <Link to="/" className="flex h-11 flex-none items-center rounded-[10px] border border-sunny-ink px-4 text-sm font-semibold hover:bg-secondary">Sign in</Link>
+                    {/* a page load, not a route (the router of this app sends every other address back to the drive) */}
+                    {signedIn ? (
+                        <a href="/" className="flex h-11 flex-none items-center rounded-[10px] border border-sunny-ink px-4 text-sm font-semibold hover:bg-secondary">My drives</a>
+                    ) : (
+                        // the main app goes on to the sign-in page, and after it comes back to the link this page was opened with
+                        <a
+                            href="/?signin=1"
+                            onClick={() => { if (token) returnAfterSignIn(`/p/${token}${linkedNodeId ? `#${encodeURIComponent(linkedNodeId)}` : ""}`); }}
+                            className="flex h-11 flex-none items-center rounded-[10px] border border-sunny-ink px-4 text-sm font-semibold hover:bg-secondary"
+                        >Sign in</a>
+                    )}
                 </header>
                 <Outlet />
             </div>
@@ -99,7 +112,7 @@ function Routing({ driveId, linkedNodeId }: { driveId: string, linkedNodeId?: st
     }, [driveId, linkedNodeId, location.pathname, navigate]);
     return (
         <Routes>
-            <Route element={<PublicLayout />}>
+            <Route element={<PublicLayout linkedNodeId={linkedNodeId} />}>
                 <Route path="/drive/:driveId" element={<DriveExplorerPage />}>
                     <Route path="/drive/:driveId/:dirId?" element={<DriveExplorerArea />} />
                 </Route>
