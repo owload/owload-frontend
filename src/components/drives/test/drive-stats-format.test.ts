@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes, formatWhen, usedPercent } from "../drive-stats-format";
+import { formatAgo, formatBytes, formatWhen, usedPercent } from "../drive-stats-format";
 
 describe("formatBytes", () => {
     it("writes sizes short", () => {
@@ -55,5 +55,32 @@ describe("formatWhen", () => {
         const justAfterMidnight = new Date(2026, 9, 21, 0, 10).getTime();
         expect(formatWhen(new Date(2026, 9, 20, 22, 0).getTime(), justAfterMidnight)).toBe("2 h ago");
         expect(formatWhen(new Date(2026, 9, 20, 9, 0).getTime(), justAfterMidnight)).toMatch(/^Yesterday, /);
+    });
+});
+
+
+describe("formatAgo", () => {
+    const now = new Date(2026, 9, 24, 15, 30).getTime();
+    const at = (day: number, hour: number, minute = 0, month = 9, year = 2026) => new Date(year, month, day, hour, minute).getTime();
+
+    it("counts minutes and hours for what is recent", () => {
+        expect(formatAgo(now - 10_000, now)).toBe("just now");
+        expect(formatAgo(now - 35 * 60_000, now)).toBe("35 min ago");
+        expect(formatAgo(now - 3 * 3_600_000, now)).toBe("3 h ago");
+    });
+
+    it("names today and yesterday, counts the days of the week, then gives a date", () => {
+        expect(formatAgo(at(24, 8), now)).toBe("Today");
+        expect(formatAgo(at(23, 18), now)).toBe("Yesterday");
+        expect(formatAgo(at(21, 12), now)).toBe("3 days ago");
+        const older = formatAgo(at(10, 12), now);
+        expect(older).toContain("10");
+        expect(older).not.toMatch(/ago|Today|Yesterday/);
+        expect(formatAgo(at(3, 9, 0, 8, 2025), now)).toContain("2025");
+    });
+
+    it("an hour or two ago stays hours when it is across midnight", () => {
+        const justAfterMidnight = new Date(2026, 9, 25, 0, 20).getTime();
+        expect(formatAgo(new Date(2026, 9, 24, 22, 40).getTime(), justAfterMidnight)).toBe("1 h ago");
     });
 });
