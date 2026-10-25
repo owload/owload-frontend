@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Check, Copy, Globe } from "lucide-react";
-import type { DriveInfo } from "@/engine";
+import { Check, Copy, Globe, UserRound } from "lucide-react";
+import type { DriveInfo, DriveRecentRead } from "@/engine";
 import { initialsOf } from "@/components/profile/avatar-presets";
 import { UserAvatar } from "@/components/profile/user-avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -30,6 +30,22 @@ function Initials({ name, id, size, open }: { name: string, id: string, size: "s
     );
 }
 
+/** A visitor of the public link who did not sign in: no initials, no colour of their own, only that someone came. */
+function VisitorFace({ size, open }: { size: "sm" | "md", open: boolean }) {
+    return (
+        <span
+            aria-hidden="true"
+            className={cn(
+                "flex flex-none items-center justify-center rounded-full bg-[#e9e8e3] text-sunny-ink shadow-[inset_0_0_0_1px_rgba(29,28,25,0.14)]",
+                open ? `ring-2 ring-sunny-yellow-surface ${EDGE_ON_YELLOW}` : "ring-2 ring-white",
+                size === "md" ? "size-7" : "size-6",
+            )}
+        >
+            <UserRound className="size-3.5" strokeWidth={2} />
+        </span>
+    );
+}
+
 function MyFace({ open, size }: { open: boolean, size: "sm" | "md" }) {
     return <UserAvatar className={cn("ring-2", size === "md" ? "size-7" : "size-6", open ? `ring-sunny-yellow-surface ${EDGE_ON_YELLOW}` : "ring-white")} />;
 }
@@ -50,6 +66,13 @@ function Who({ name, detail, children }: { name: string, detail?: string, childr
 }
 
 const capital = (word: string) => `${word[0].toUpperCase()}${word.slice(1)}`;
+
+/** What the hover says about a reader besides the name: the role (or the browser of a visitor), what they did and when. */
+function readDetail(read: DriveRecentRead, mine: boolean): string {
+    const what = `${read.kind === "opened" ? "Opened the drive" : "Read files"} ${formatWhen(read.at)}`;
+    if (read.role === "visitor") return `Not signed in${read.device ? ` · ${read.device}` : ""} · ${what}`;
+    return `${mine ? "" : `${capital(read.role)} · `}${what}`;
+}
 
 /**
  * The quiet line under a card (owload-docs/decisions/0039): who can open the drive and who read it last, on one grey line. Who is on it: only you,
@@ -113,11 +136,11 @@ export function InfoLine({ driveInfo, open, onAll }: { driveInfo: DriveInfo, ope
 
             {newest ? (
                 <span className="flex min-w-0 items-center gap-2 max-md:order-3 max-md:basis-full">
-                    <Who name={newest.name} detail={`${newest.userId === myId ? "" : `${capital(newest.role)} · `}${newest.kind === "opened" ? "Opened the drive" : "Read files"} ${formatWhen(newest.at)}`}>
-                        {newest.userId === myId ? <MyFace open={open} size="sm" /> : <Initials name={newest.name} id={newest.userId} size="sm" open={open} />}
+                    <Who name={newest.name} detail={readDetail(newest, newest.userId === myId)}>
+                        {newest.userId === myId ? <MyFace open={open} size="sm" /> : newest.role === "visitor" ? <VisitorFace open={open} size="sm" /> : <Initials name={newest.name} id={newest.userId} size="sm" open={open} />}
                     </Who>
                     <span className="truncate"><b className="font-semibold">{newest.name}</b><span className={muted}> read · {formatAgo(newest.at)}</span></span>
-                    {reads.length > 1 && <span className={cn("flex-none text-xs", muted)} title={reads.slice(1).map((read) => read.name).join(", ")}>+{reads.length - 1}</span>}
+                    {reads.length > 1 && <span className={cn("flex-none text-xs", muted)} title={reads.slice(1).map((read) => (read.role === "visitor" && read.device ? `${read.name} (${read.device})` : read.name)).join(", ")}>+{reads.length - 1}</span>}
                 </span>
             ) : (
                 <span className={cn(muted, "max-md:order-3 max-md:basis-full")}>{driveInfo.lastReadAt ? `Last read ${formatAgo(driveInfo.lastReadAt)}` : "Not read yet"}</span>

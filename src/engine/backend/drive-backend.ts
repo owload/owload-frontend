@@ -62,9 +62,11 @@ export interface DriveRecentRead {
   /** "You" for the person who asks. */
   name: string;
   at: number;
-  role: MyDriveRole;
+  role: MyDriveRole | "visitor";
   /** "opened": the drive was opened; "read": the data of its files was read. */
   kind: "opened" | "read";
+  /** A visitor of the public link who is not signed in: only the coarse description of their browser ("Safari on iOS"). */
+  device?: string;
 }
 
 export type S3PresetTier = 'hot' | 'cold';
