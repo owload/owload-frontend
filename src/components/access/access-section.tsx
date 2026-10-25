@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Copy, Link2, Lock, RefreshCw, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,9 +92,15 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
     // the role each pending request is going to be given (reader unless the owner picks another)
     const [requestRoles, setRequestRoles] = useState<Record<string, DriveRole>>({});
     // Making the drive private takes everyone off it, so it is asked first when there is anyone (and always of an admin, who loses it too).
+    // Taking a public drive off the link (to shared or private) ends the link for everybody who has it, so that is asked first too.
     const [leaving, setLeaving] = useState<DriveVisibility | undefined>();
     // Making a new link ends the old one for everybody who has it, so it is asked first.
     const [replacingLink, setReplacingLink] = useState(false);
+
+    // What the dialog above says is kept while it closes: the choice has been made by then, and the drive already shows the new state.
+    const dialogFacts = useRef<{ target: DriveVisibility, from: DriveVisibility, people: number }>({ target: "private", from: "private", people: 0 });
+    if (leaving !== undefined && access) dialogFacts.current = { target: leaving, from: access.visibility, people: access.people.length };
+    const facts = dialogFacts.current;
 
     const myRole = access?.myRole ?? driveInfo.myRole;
     const manages = myRole === "owner" || myRole === "admin";
@@ -156,7 +162,9 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
                         <label key={value} className={cn("flex min-h-[52px] cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-[7px]", selected ? "border-sunny-ink bg-sunny-yellow-soft" : "border-sunny-line bg-white hover:border-sunny-ink")}>
                             <input type="radio" name="visibility" value={value} checked={selected} onChange={() => {
                                 // an admin who makes the drive private or public loses it too (only the owner stays), so they are asked even with nobody else on it
-                                if (value === "private" && access.visibility !== "private" && (access.people.length > 0 || !isOwner)) setLeaving(value);
+                                const losesPeople = value === "private" && access.visibility !== "private" && (access.people.length > 0 || !isOwner);
+                                const losesLink = access.visibility === "public" && value !== "public";
+                                if (losesPeople || losesLink) setLeaving(value);
                                 else void run(() => setVisibility(value));
                             }} className="m-0 size-[18px] flex-none accent-sunny-ink" />
                             <span className="flex min-w-0 flex-1 flex-col">
@@ -332,18 +340,26 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
             <Dialog open={leaving !== undefined} onOpenChange={(open) => { if (!open) setLeaving(undefined); }}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Make the drive {leaving}?</DialogTitle>
+                        <DialogTitle>Make the drive {facts.target}?</DialogTitle>
                         <DialogDescription asChild>
                             <div className="space-y-2">
-                                {access.people.length > 0 && (
+                                {facts.from === "public" && (
+                                    <p className="m-0 font-semibold text-sunny-ink">
+                                        The public link stops working at once, for everyone who has it. This includes links to single files and folders. If you make the drive public again, it gets a new link.
+                                    </p>
+                                )}
+                                {facts.target === "shared" && facts.from === "public" && (
+                                    <p className="m-0">Only the people you invited can open the drive then{facts.people > 0 ? ", with the roles they have now" : ""}.</p>
+                                )}
+                                {facts.target === "private" && facts.people > 0 && (
                                     <p className="m-0">
-                                        {access.people.length === 1 ? "The person" : `All ${access.people.length} people`} with access {access.people.length === 1 ? "is" : "are"} taken off the drive, and invitations that are not answered yet are cancelled.
+                                        {facts.people === 1 ? "The person" : `All ${facts.people} people`} with access {facts.people === 1 ? "is" : "are"} taken off the drive, and invitations that are not answered yet are cancelled.
                                         If you share the drive again, they have to be added again.
                                     </p>
                                 )}
-                                {!isOwner && (
+                                {!isOwner && facts.target === "private" && (
                                     <p className="m-0 font-semibold text-sunny-ink">
-                                        You are not the owner, so you lose access to this drive too: only the owner keeps a {leaving} drive. You will be taken to My drives.
+                                        You are not the owner, so you lose access to this drive too: only the owner keeps a {facts.target} drive. You will be taken to My drives.
                                     </p>
                                 )}
                             </div>
@@ -357,10 +373,10 @@ export function AccessSection({ driveInfo, onLeft }: { driveInfo: DriveInfo, onL
                                 const next = leaving!;
                                 setLeaving(undefined);
                                 // an admin who has taken the drive from themselves has nothing here any more: on to My drives
-                                void run(async () => { await setVisibility(next); if (!isOwner) onLeft(); });
+                                void run(async () => { await setVisibility(next); if (!isOwner && next === "private") onLeft(); });
                             }}
                         >
-                            {isOwner ? `Make ${leaving}` : `Make ${leaving} and leave`}
+                            {isOwner || facts.target !== "private" ? `Make ${facts.target}` : `Make ${facts.target} and leave`}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
