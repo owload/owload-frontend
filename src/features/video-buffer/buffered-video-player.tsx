@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Maximize, Minimize, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import type { FileProperties } from "@/types/types";
+import { useServiceWorkerControl } from "@/hooks/use-service-worker-control";
 import { getBufferingBackend } from "./buffering-filesystem-backend";
 import type { ByteRange, VideoBuffer } from "./video-buffer";
 import { MediaLoadingIndicator } from "@/components/media-preview/loading-indicator";
@@ -70,6 +71,7 @@ export function BufferedVideoPlayer({ fileToPreview, thumbnailUrl }: Props) {
   const [fullscreen, setFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [error, setError] = useState(false);
+  const workerControls = useServiceWorkerControl();
 
   const setWaiting = useCallback((value: boolean) => {
     waitingRef.current = value;
@@ -259,7 +261,7 @@ export function BufferedVideoPlayer({ fileToPreview, thumbnailUrl }: Props) {
       )}
       {!showsPicture && !error && <MediaLoadingIndicator label="Loading video" />}
       {!frameReady && thumbnailUrl && <img src={thumbnailUrl} alt="" className="max-h-[100dvh] max-w-[100vw]" />}
-      {ready && (
+      {ready && workerControls && (
         <video
           ref={videoRef}
           className="max-h-[100dvh] max-w-[100vw]"

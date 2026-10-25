@@ -1,3 +1,4 @@
+import { useServiceWorkerControl } from "@/hooks/use-service-worker-control";
 import { BufferedVideoPlayer } from "@/features/video-buffer/buffered-video-player";
 import { isVideoBufferEnabled } from "@/features/video-buffer/flag";
 import { getBufferingBackend } from "@/features/video-buffer/buffering-filesystem-backend";
@@ -46,6 +47,7 @@ export function VideoPreview(props: VideoPreviewProps) {
 function NativeVideoPreview({ fileToPreview, thumbnail }: { fileToPreview: FileProperties, thumbnail: PreviewThumbnail }) {
     const [ready, setReady] = useState(false);
     const [playError, setPlayError] = useState(false);
+    const workerControls = useServiceWorkerControl();
 
     const start = fileToPreview.byteOffset;
     const len = fileToPreview.byteLength!;
@@ -63,7 +65,7 @@ function NativeVideoPreview({ fileToPreview, thumbnail }: { fileToPreview: FileP
         {playError && <div className="fixed top-0">Media can not be played</div>}
         {!showsSomething && !playError && <MediaLoadingIndicator label="Loading video" />}
         {!ready && thumbnail.url && <img className="max-w-full max-h-full m-auto select-none" src={thumbnail.url}></img>}
-        <video className="max-w-full max-h-full m-auto select-none"
+        {workerControls && <video className="max-w-full max-h-full m-auto select-none"
             playsInline
             muted
             autoPlay
@@ -72,6 +74,6 @@ function NativeVideoPreview({ fileToPreview, thumbnail }: { fileToPreview: FileP
             onError={onPlayErrorHandler}
             style={{ display: ready ? "block" : "none" }}
             preload="auto"
-            controls src={`/videorequest/${encodeURIComponent(getMimeType(fileToPreview.name))}/${start}/${len}`} />
+            controls src={`/videorequest/${encodeURIComponent(getMimeType(fileToPreview.name))}/${start}/${len}`} />}
     </>
 }

@@ -5,6 +5,12 @@ sw.addEventListener('install', async (event) => {
   sw.skipWaiting();
 });
 
+// A page opened for the first time (a new profile, a private window) has no service worker yet; once this one is active it takes the
+// open pages over, so that the first video requested is already answered by it instead of failing until the page is reloaded.
+sw.addEventListener('activate', (event) => {
+  event.waitUntil(sw.clients.claim());
+});
+
 // SW-level in-memory cache for decrypted video chunks (lives for the SW lifetime).
 // Keyed by "${fileByteStart}_${rangeStart}_${rangeEnd}".
 const videoChunkCache = new Map<string, Uint8Array>();
