@@ -1,14 +1,32 @@
-# Owload
+# owload-frontend
 
-Secure cloud storage with client-side encryption. Files are encrypted on your device before upload — the server never sees plaintext data or your encryption keys.
+The web client of **Owload**: cloud file storage where files are **encrypted on your device before they are uploaded**. The server stores only
+ciphertext and never receives your password or your keys, so a breach of the server or of the storage reveals only ciphertext.
+
+This repository is where the encryption happens, so it is the one to read if you want to check the claim instead of taking our word for it.
+
+## Three ways to use Owload
+
+| | Where your encrypted files are | Who runs the service | Cost |
+|---|---|---|---|
+| **Web version** | Owload's storage, 3 GB | Owload | Free |
+| **Web version with your own S3** | Your S3 bucket, as much as it holds | Owload | Free |
+| **Self-hosted** | Your S3 bucket | You, from the Docker images | Free (your own server) |
+
+Self-hosting needs this client (image `owload-frontend`), the API ([owload-backend](https://github.com/owload/owload-backend), image
+`owload-backend`), a PostgreSQL database, a Keycloak server and an S3 bucket. The images are built by GitHub Actions and published on Docker Hub;
+`owload-docs/operations/docker-images.md` and the Compose example next to it describe the installation.
 
 ## Features
 
-- **Client-side encryption** — AES-256-CTR encryption happens in the browser/app before any data leaves your machine
-- **Password-based keys** — symmetric keys are derived from your drive password via PBKDF2 (SHA-512, 100k iterations) and never transmitted to the server
-- **Desktop app** — Tauri-based native app for macOS, Windows, Linux (recommended for maximum security)
-- **Web app** — browser-based access via Keycloak authentication
-- **Encrypted metadata** — file paths and operation types are encrypted alongside file contents
+- **Client-side encryption**: AES-256-CTR in the browser before any data leaves your machine; file contents, names and folder structure are all encrypted
+- **Password-based keys**: symmetric keys are derived from the drive's password (PBKDF2-SHA-512, 100k iterations) and never sent to the server
+- **Drives with roles**: private, shared (reader, writer, admin) and public (a read-only link, with the drive's password given separately)
+- **Your storage or ours**: a drive lives on Owload's storage or on any S3-compatible bucket of yours, with up to two more copies
+- **Previews in place**: documents, spreadsheets, presentations, photos (including HEIC) and videos; file formats are handled by [extensions](https://github.com/owload/editor-sdk)
+- The code of the client is public: you can read what it does with your files
+
+The Tauri desktop app (macOS, Windows, Linux) is in this code base but **has not been released**.
 
 ## Security model
 

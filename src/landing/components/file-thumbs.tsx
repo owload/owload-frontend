@@ -3,13 +3,11 @@
  * illustrations; the photographs are real pictures.
  */
 
-type Kind = "XLSX" | "DOCX" | "PDF" | "PPTX" | "JPG" | "HEIC";
+type Kind = "XLSX" | "TXT" | "JPG" | "HEIC";
 
 const BADGE_COLOR: Record<Kind, string> = {
   XLSX: "bg-(--lp-green)",
-  DOCX: "bg-(--lp-blue)",
-  PDF: "bg-(--lp-red)",
-  PPTX: "bg-(--lp-orange)",
+  TXT: "bg-(--lp-blue)",
   JPG: "bg-(--lp-violet)",
   HEIC: "bg-(--lp-violet)",
 };
@@ -63,25 +61,6 @@ export function DocThumb({ title = 50 }: { title?: number }) {
 }
 
 /** A slide: a title, bars and a few lines. */
-export function SlidesThumb() {
-  return (
-    <div aria-hidden="true" className="absolute inset-0 flex flex-col gap-2 bg-white px-3.5 pt-3.5">
-      <div className="h-1.5 w-[58%] rounded-[3px] bg-(--lp-ink)" />
-      <div className="flex min-h-0 flex-1 gap-2.5">
-        <div className="flex flex-[1.2] items-end gap-[5px]">
-          {[30, 52, 80, 44].map((h, i) => (
-            <div key={i} className={`flex-1 rounded-t-[3px] ${i === 2 ? "bg-(--lp-ink)" : "bg-(--lp-yellow-edge)"}`} style={{ height: `${h}%` }} />
-          ))}
-        </div>
-        <div className="flex flex-1 flex-col gap-1.5 pt-1.5">
-          {[100, 80, 90].map((w, i) => (
-            <div key={i} className="h-1 rounded-[3px] bg-(--lp-line-2)" style={{ width: `${w}%` }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /** The photographs of the landing page (public/landing) with the part of each that the design keeps in the crop. */
 export const PHOTOS = {

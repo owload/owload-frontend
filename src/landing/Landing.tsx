@@ -1,4 +1,5 @@
 import "./landing.css";
+import { AiGuardSection } from "./components/ai-guard-section";
 import { ContactSection } from "./components/contact-section";
 import { FaqSection } from "./components/faq-section";
 import { Hero } from "./components/hero";
@@ -17,6 +18,7 @@ export function Landing() {
       <Hero />
       <ProductSection />
       <SecuritySection />
+      <AiGuardSection />
       <PricingSection />
       <FaqSection />
       <ContactSection />

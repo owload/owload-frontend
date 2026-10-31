@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { FAQ_ITEMS } from "./data";
-import { Placeholder, SectionTag } from "./placeholder";
+import { SectionTag } from "./placeholder";
 
-/** An accordion: one answer is open at a time. The answers are placeholders until the real ones are supplied. */
+/** An accordion: one answer is open at a time. */
 export function FaqSection() {
   const [open, setOpen] = useState<number | null>(0);
   return (
@@ -13,7 +13,7 @@ export function FaqSection() {
         <h2 className="m-0 text-[clamp(30px,3.4vw,44px)] font-extrabold leading-[1.12] tracking-[-0.02em] text-balance">Questions and answers</h2>
       </div>
       <div className="flex min-w-0 flex-[2_1_520px] flex-col border-t border-(--lp-line)">
-        {FAQ_ITEMS.map((question, i) => {
+        {FAQ_ITEMS.map(({ question, answer }, i) => {
           const expanded = open === i;
           return (
             <div key={question} className="flex flex-col border-b border-(--lp-line)">
@@ -33,9 +33,7 @@ export function FaqSection() {
                 </button>
               </h3>
               {expanded && (
-                <p id={`faq-answer-${i}`} role="region" aria-labelledby={`faq-question-${i}`} className="m-0 pb-5 pr-[52px] text-(--lp-placeholder)">
-                  <Placeholder className="border-(--lp-placeholder-edge)">[YOUR ANSWER]</Placeholder>
-                </p>
+                <p id={`faq-answer-${i}`} role="region" aria-labelledby={`faq-question-${i}`} className="m-0 pb-5 pr-[52px] text-(--lp-text-white)">{answer}</p>
               )}
             </div>
           );

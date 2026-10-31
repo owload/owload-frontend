@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { SparklesIcon, TargetIcon, UserCheckIcon } from "./design-icons";
-import { Placeholder, SectionTag } from "./placeholder";
+import { SectionTag } from "./placeholder";
 
 const STEPS = [
   {
@@ -35,8 +35,8 @@ export function SecuritySection() {
         <p className="m-0 max-w-[460px] text-(--lp-text-white)">
           Encryption on your device is only as trustworthy as the code that does it, so no release skips these checks.
         </p>
-        <p className="m-0 text-(--lp-placeholder)">
-          <Placeholder className="border-(--lp-placeholder-edge)">[WHAT THE AI REVIEW LOOKS FOR: 2–3 EXAMPLES]</Placeholder>
+        <p className="m-0 max-w-[460px] text-(--lp-text-white)">
+          The review looks for what matters most here: anything that could send your password or keys to the server, leaks of private data, and gaps in who may open which drive.
         </p>
       </div>
       <div className="min-w-0 flex-[1_1_440px]">

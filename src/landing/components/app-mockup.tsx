@@ -1,5 +1,5 @@
 import { Archive, ChevronRight, ChevronsUpDown, Clock, FileText, FolderPlus, Image as ImageIcon, Lock, Search, SlidersHorizontal, Trash2, UploadCloud } from "lucide-react";
-import { DocThumb, FileCard, PhotoThumb, SheetThumb, SlidesThumb } from "./file-thumbs";
+import { DocThumb, FileCard, PhotoThumb, SheetThumb } from "./file-thumbs";
 import { Logo } from "./logo";
 
 const SECTIONS = [
@@ -80,11 +80,11 @@ export function AppMockup() {
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(clamp(120px,13.5vw,170px),100%),1fr))] gap-x-3.5 gap-y-4">
           <FileCard kind="XLSX" name="Budget Q3.xlsx"><SheetThumb /></FileCard>
           <FileCard kind="JPG" name="IMG_5187.jpg"><PhotoThumb photo="pelican" /></FileCard>
-          <FileCard kind="PDF" name="Contract.pdf"><DocThumb title={50} /></FileCard>
+          <FileCard kind="TXT" name="Contract notes.txt"><DocThumb title={50} /></FileCard>
           <FileCard kind="HEIC" name="IMG_5188.HEIC"><PhotoThumb photo="pool" /></FileCard>
-          <FileCard kind="PPTX" name="Pitch deck.pptx"><SlidesThumb /></FileCard>
+          <FileCard kind="XLSX" name="Plan 2027.xlsx"><SheetThumb /></FileCard>
           <FileCard kind="JPG" name="IMG_7225.jpeg"><PhotoThumb photo="monkeys" /></FileCard>
-          <FileCard kind="DOCX" name="Annual report.docx"><DocThumb title={36} /></FileCard>
+          <FileCard kind="TXT" name="Annual report.txt"><DocThumb title={36} /></FileCard>
           <FileCard kind="JPG" name="IMG_5190.jpg"><PhotoThumb photo="glacier" /></FileCard>
         </div>
       </div>

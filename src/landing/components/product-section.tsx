@@ -1,15 +1,14 @@
 import { Archive, Lock, Plus, ShieldCheck } from "lucide-react";
-import { DocThumb, PhotoThumb, SheetThumb, SlidesThumb, TypeBadge } from "./file-thumbs";
+import { DocThumb, PhotoThumb, SheetThumb, TypeBadge } from "./file-thumbs";
 import { SectionTag } from "./placeholder";
 
-/** A stack of three rotated file cards, as in the "Office files" panel. */
+/** A stack of two rotated file cards, as in the "Documents and spreadsheets" panel. */
 function OfficeStack() {
   const card = "relative w-[46%] flex-none aspect-4/3 overflow-hidden rounded-xl bg-white shadow-[0_12px_28px_rgba(26,26,25,0.22)]";
   return (
     <div className="mt-auto flex items-end justify-center pb-2 pt-7" aria-hidden="true">
-      <div className={`${card} z-[1] -rotate-[7deg]`}><SheetThumb /><TypeBadge kind="XLSX" /></div>
-      <div className={`${card} z-[3] -ml-[19%]`}><DocThumb /><TypeBadge kind="PDF" /></div>
-      <div className={`${card} z-[2] -ml-[19%] rotate-[7deg]`}><SlidesThumb /><TypeBadge kind="PPTX" /></div>
+      <div className={`${card} z-[1] -rotate-[5deg]`}><SheetThumb /><TypeBadge kind="XLSX" /></div>
+      <div className={`${card} z-[2] -ml-[14%] rotate-[5deg]`}><DocThumb /><TypeBadge kind="TXT" /></div>
     </div>
   );
 }
@@ -51,9 +50,9 @@ export function ProductSection() {
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(420px,100%),1fr))] gap-5">
         <div className="flex flex-col gap-3.5 overflow-hidden rounded-3xl bg-(--lp-yellow) p-[clamp(24px,3vw,36px)]">
-          <h3 className={heading}>Office files</h3>
+          <h3 className={heading}>Documents and spreadsheets</h3>
           <p className="m-0 max-w-[400px] text-(--lp-text-yellow)">
-            Documents, spreadsheets and presentations show a preview right in the grid, so you find the file without opening it.
+            Text files and spreadsheets open and edit right in the browser, with a preview in the grid. Every other file is stored the same way, encrypted.
           </p>
           <OfficeStack />
         </div>
